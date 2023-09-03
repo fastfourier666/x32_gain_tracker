@@ -1,0 +1,14 @@
+{
+	"preampX32" : "192.168.42.195",
+	"trimX32" : "192.168.42.227",
+	"channels" : [
+		{ "headamp" : 0, "trimChannel" : 1 },
+		{ "headamp" : 1, "trimChannel" : 2 },
+		{ "headamp" : 2, "trimChannel" : 3 },	
+		{ "headamp" : 3, "trimChannel" : 4 },	
+		{ "headamp" : 4, "trimChannel" : 5 },	
+		{ "headamp" : 5, "trimChannel" : 6 },	
+		{ "headamp" : 6, "trimChannel" : 7 },	
+		{ "headamp" : 7, "trimChannel" : 8 }	
+	]
+}
