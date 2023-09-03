@@ -9,6 +9,8 @@ var trimX32; // = new osc.UDPPort();
 var gains = [];
 var prevGains = [];
 var storedGains = [];
+var commandTrims = [];
+var ch2map = Array(32).fill(-1);
 
 var firstRun = true;
 var enabled = false;
@@ -40,21 +42,38 @@ function init() {
             });
             preampX32.open();
             trimX32.open();
+			printInstructions();
+
+			// create reverse lookup so we can find the preamp by the trim channel number
+			for (let i=0; i<32; i++) {
+				for (let j=0; j<config.channels.length; j++) {
+					if (config.channels[j].trimChannel==(i+1)) {
+						ch2map[i]=j;
+						break;
+					}
+				}
+			}
 
             preampX32.on('ready', function() {
                 console.log(`preamp X32 ready on ${config.preampX32}`);
                 setInterval(subscribePreamps, 8000);
                 subscribePreamps();
-                printInstructions();
+                
             });
 
             trimX32.on('ready', function() {
                 console.log(`trim X32 ready on ${config.trimX32}`);
+                setInterval(subscribeTrims,8000);
+                subscribeTrims();
             });
 
             preampX32.on('message', function(oscMessage) {
                 handleGains(oscMessage);
             });
+
+            trimX32.on('message', function (oscMessage) {
+            	handleTrims(oscMessage);
+            })
         }
     });
 }
@@ -85,7 +104,8 @@ function handleGains(msg) {
                                     break;
                                 } else {
                                     console.log(`Preamp #${ch.headamp} changed, trim channel ${ch.trimChannel} -> ${gainDifference.toFixed(1)}dB`);
-                                    setTrim(config.channels[idx].trimChannel, storedGains[i] - gains[i]);
+                                    setTrim(ch.trimChannel, gainDifference);
+                                    commandedTrim[idx] = gainDifference;
                                     break;
                                 }
                             }
@@ -96,9 +116,19 @@ function handleGains(msg) {
                 }
             }
         }
-    }
+    } 
 }
 
+function handleTrims (msg) {
+	if (msg.address.match('tr')) {
+   		let tr = Array.from(new Float32Array(msg.args[0].buffer, msg.args[0].byteOffset, msg.args[0].byteLength / 4));
+   		tr.shift();			// remove first 4 bytes of the message which is the blob length
+   		console.log (`${(tr[0]*36-18).toFixed(1)}`)
+   		for (let i=0; i<tr.length; i++) {
+
+   		}
+    }
+}
 function subscribePreamps() {
     preampX32.send({
         address: `/formatsubscribe`,
@@ -120,6 +150,29 @@ function subscribePreamps() {
 
 		}]
     });
+}
+
+function subscribeTrims() {
+    trimX32.send({
+        address: `/formatsubscribe`,
+        args: [{
+            type: `s`,
+            value: `/tr`
+		}, {
+            type: `s`,
+            value: `/ch/**/preamp/trim`
+		}, {
+            type: `i`,
+            value: 1
+		}, {
+            type: `i`,
+            value: 32
+		}, {
+            type: `i`,
+            value: 1
+
+		}]
+    });	
 }
 
 
